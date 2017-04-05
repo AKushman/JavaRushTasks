@@ -1,11 +1,12 @@
 package com.javarush.task.task36.task3608.model;
 
+import com.javarush.task.task36.task3608.bean.User;
 import com.javarush.task.task36.task3608.model.service.UserService;
 import com.javarush.task.task36.task3608.model.service.UserServiceImpl;
 
-/**
- * Created by user on 05.04.17.
- */
+import java.util.List;
+
+
 public class MainModel implements Model {
     private UserService userService = new UserServiceImpl();
     private ModelData modelData = new ModelData();
@@ -27,4 +28,17 @@ public class MainModel implements Model {
         modelData.setUsers(userService.getAllDeletedUsers());
     }
 
+    public void loadUserById(long userId) {
+        User user = userService.getUsersById(userId);
+        modelData.setActiveUser(user);
+    }
+
+    public void deleteUserById(long id) {
+        userService.deleteUser(id);
+        modelData.setUsers(getAllUsers());
+    }
+
+    private List<User> getAllUsers() {
+        return userService.filterOnlyActiveUsers(modelData.getUsers());
+    }
 }
