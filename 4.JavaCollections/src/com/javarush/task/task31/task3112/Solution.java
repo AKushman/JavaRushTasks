@@ -22,13 +22,15 @@ public class Solution {
     }
 
     public static Path downloadFile(String urlString, Path downloadDirectory) throws IOException {
-        // implement this method
+        String fileName = urlString.substring(urlString.lastIndexOf("/")+1);
+        Path resultFile = Paths.get(downloadDirectory + "/" + fileName);
         URL url = new URL(urlString);
-        InputStream inputStream = url.openStream();
-        Path fileName = Paths.get(url.getPath()).getFileName();
-        Path tmp = Files.createTempFile(null, null);
-        Files.copy(inputStream, tmp, StandardCopyOption.REPLACE_EXISTING);
-        downloadDirectory = Paths.get(downloadDirectory.toString(), fileName.toString());
-        return Files.move(tmp, downloadDirectory);
+        InputStream is = url.openStream();
+        Path tempFile = Files.createTempFile("temp-","");
+        Files.copy(is,tempFile);
+        is.close();
+        Files.move(tempFile,resultFile);
+        return resultFile;
+
     }
 }
