@@ -1,51 +1,57 @@
 package com.javarush.task.task31.task3105;
 
+
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-/* 
+/*
 Добавление файла в архив
 */
 public class Solution {
     public static void main(String[] args) throws IOException {
         String fileName = args[0];
-        String zip = args[1];
-        Path tmp = Files.createTempFile(null, null);
-        ZipOutputStream zipOutput = new ZipOutputStream(Files.newOutputStream(tmp));
-        ZipInputStream zipInput = new ZipInputStream(Files.newInputStream(Paths.get(zip)));
-        ZipEntry entry = zipInput.getNextEntry();
-        while (entry != null) {
-            String archivedFileName = entry.getName();
-            zipOutput.putNextEntry(new ZipEntry(archivedFileName));
-            copyData(zipInput, zipOutput);
-            zipInput.closeEntry();
-            zipOutput.closeEntry();
+        String zipFile = args[1];
+        Map<ZipEntry, StringBuffer> map = new HashMap<>();
+        try(ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile));){
+            ZipEntry entry;
+            int i;
+            while ((entry = zis.getNextEntry()) != null) {
+                StringBuffer sb = new StringBuffer();
+                while ((i = zis.read()) != -1) {
+                    sb.append((char) i);
+                }
+                map.put(entry, sb);
+            }
 
-            entry = zipInput.getNextEntry();
-        }
-        zipInput.close();
-        ZipEntry fileToAdd = new ZipEntry("new/" + Paths.get(fileName).getFileName());
-        zipOutput.putNextEntry(fileToAdd);
-        InputStream inputFile = Files.newInputStream(Paths.get(fileName));
-        copyData(inputFile, zipOutput);
-        zipOutput.closeEntry();
-        inputFile.close();
-        zipOutput.close();
-        Files.copy(tmp, Paths.get(zip), StandardCopyOption.REPLACE_EXISTING);
+            File file = new File(fileName);
+            try(ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(zipFile));){
+            zos.putNextEntry(new ZipEntry("new/" + file.getName()));
+            Files.copy(file.toPath(), zos);
+            for (Map.Entry<ZipEntry, StringBuffer> pair : map.entrySet()) {
+                if (!pair.getKey().getName().equals(file.getName())) {
+                    zos.putNextEntry(pair.getKey());
+                    for (char c : pair.getValue().toString().toCharArray()) {
+                        zos.write(c);
+                    }
+                } else {
+                    zos.putNextEntry(new ZipEntry(pair.getKey().getName()));
+                    Files.copy(file.toPath(), zos);
+                }
+            }
+            zis.close();
+            zos.close();
+            }
 
-    }
+            }
+        catch(Exception e)
+        {
+                e.printStackTrace();
+            }
 
-    private static void copyData(InputStream in, OutputStream out) throws IOException {
-        byte[] buffer = new byte[8 * 1024];
-        int len;
-        while ((len = in.read(buffer)) > 0) {
-            out.write(buffer, 0, len);
-        }
     }
 }
