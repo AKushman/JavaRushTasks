@@ -10,8 +10,9 @@ import com.javarush.task.task28.task2810.view.HtmlView;
 public class Aggregator {
     public static void main(String[] args) {
         HtmlView view = new HtmlView();
-        Provider provider = new Provider(new MoikrugStrategy());
-        Model model = new Model(view, provider);
+        Provider provider = new Provider(new HHStrategy());
+        Provider mkProvider = new Provider(new MoikrugStrategy());
+        Model model = new Model(view, provider, mkProvider);
         Controller controller = new Controller(model);
         view.setController(controller);
         view.userCitySelectEmulationMethod();

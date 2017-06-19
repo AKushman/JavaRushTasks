@@ -11,49 +11,44 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MoikrugStrategy implements Strategy {
-    private static final String URL_FORMAT = "http://moikrug.ru/vacancies?page=%d&q=java+%s";
-    String testURL = "http://javarush.ru/testdata/big28data2.html";
+    private static final String URL_FORMAT = "https://moikrug.ru/vacancies?q=java+%s&page=%d";
 
     @Override
     public List<Vacancy> getVacancies(String searchString) throws IOException {
-        String vacancyQuery = "[class='job']";
-        String titleQuery = "[class='title']";
-        String compensationQuery = "[class='salary']";
-        String addressQuery = "[class='location']";
-        String employerQuery = "[class='company_name']";
-        List<Vacancy> list = new ArrayList<>();
-        int i = 0;
-        Vacancy vacancy = new Vacancy();
-        try {
-            while (true){
-                Document document = getDocument(searchString, i);
-                Elements vacanciesElements = document.select(vacancyQuery);
-                if (!vacanciesElements.isEmpty()){
-                    for (Element element: vacanciesElements){
-                        vacancy.setTitle(element.select(titleQuery).text());
-                        vacancy.setCity(element.select(addressQuery).text());
-                        vacancy.setCompanyName(element.select(employerQuery).text());
-                        vacancy.setUrl(element.select(titleQuery).attr("href"));
-                        vacancy.setSiteName("https://moikrug.ru");
-                        if (!element.select(compensationQuery).isEmpty()){
-                            vacancy.setSalary(element.select(compensationQuery).text());
-                        } else {
-                            vacancy.setSalary("");
-                        }
-                        list.add(vacancy);
-                    }
-                } else {
-                    break;
-                }
-                i++;
+        List<Vacancy> Vacancies = new ArrayList<>();
+        int pageNum = 0;
+        Document doc = null;
+        while(true)
+        {
+            try {
+                doc = getDocument(searchString, pageNum);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-        } catch (Exception error) {
-            error.printStackTrace();
+            Elements vacancies = doc.getElementsByClass("job");
+            if (vacancies.size()==0) break;
+            for (Element element: vacancies)
+            {
+                if (element != null)
+                {
+                    Vacancy vac = new Vacancy();
+                    vac.setTitle(element.getElementsByAttributeValue("class", "title").text());
+                    vac.setCompanyName(element.getElementsByAttributeValue("class", "company_name").text());
+                    vac.setSiteName(URL_FORMAT);
+                    vac.setUrl("https://moikrug.ru" + element.select("a[class=job_icon]").attr("href"));
+                    String salary = element.getElementsByAttributeValue("class", "salary").text();
+                    String city = element.getElementsByAttributeValue("class", "location").text();
+                    vac.setSalary(salary.length()==0 ? "" : salary);
+                    vac.setCity(city.length()==0 ? "" : city);
+                    Vacancies.add(vac);
+                }
+            }
+            pageNum++;
         }
-        return list;
+        return Vacancies;
     }
 
     protected Document getDocument(String searchString, int page) throws IOException {
-        return Jsoup.connect(String.format(testURL, page, searchString)).userAgent("Mozilla").referrer("none").get();
+        return Jsoup.connect(String.format(URL_FORMAT, searchString, page)).userAgent("Mozilla").referrer("none").get();
     }
 }
